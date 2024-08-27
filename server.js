@@ -7,11 +7,7 @@ import favorites from './models/favorite.js';
 dotenv.config();
 const app = express();
 app.use(
-    cors({
-      origin:"http://127.0.0.1:5501",
-      preflightContinue: true,
-      credentials: true,
-    }),
+    cors(),
   );
   
 app.use(express.json());
@@ -26,22 +22,27 @@ app.get('/api/universities', async (req, res) => {
       res.status(500).send('Error fetching data');
   }
 });
-
+  
 // Save favorite
-app.post('/api/favorite', async(req, res) => {
+app.post('/api/favorite', async (req, res) => {
   const { name, state_province, web_page } = req.body;
 
   try {
-
+    const existingFavorite = await favorites.findOne({
+      where: { name, state_province, web_page }
+    });
+    if (existingFavorite) {
+      return res.status(409).json({ message: 'Favorite already exists in the database' });
+    }
     const favorite = await favorites.create({
       name,
       state_province,
       web_page,
     });
 
-    return res.status(201).json({ message: 'favorite added successfully' });
+    return res.status(201).json({ message: 'Favorite added successfully' });
   } catch (error) {
-    console.error('Error during added:', error.message);
+    console.error('Error during addition:', error.message);
     return res.status(500).json({ message: 'Server error' });
   }
 });
